@@ -167,6 +167,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const handleKeyUp = (e: KeyboardEvent) => {
   isCtrlDown.value = false
+  bulkMode.value = selected.value.length > 0
 }
 // BONUS for multi select
 const handleRowClick = (props: any) => {
@@ -257,6 +258,7 @@ const deleteSelected = () => {
     .then(() => {
       $toast.success(`Deleted ${ids.length} vehicle(s)`)
       selected.value = []
+      bulkMode.value = false
       //low number of records so re-fetch but ideally should be server-side pagination or careful frontend records handlers, maybe store
       fetchData()
     })
