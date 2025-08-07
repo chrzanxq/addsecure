@@ -33,7 +33,7 @@
                   @click="deleteSelected"
                   :disabled="!selected.length"
                 >
-                  <v-icon left>mdi-delete</v-icon> Delete Selected
+                  <v-icon left>mdi-delete</v-icon> {{ $t('Delete Selected') }}
                 </v-btn>
                   <v-spacer />
                   <v-text-field
