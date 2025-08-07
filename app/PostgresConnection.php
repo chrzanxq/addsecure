@@ -11,7 +11,7 @@ class PostgresConnection
     public function connect(): PDO
     {
         if ($this->pdo === null) {
-            $dsn = 'pgsql:host=localhost;port=5432;dbname=addsecure;user=*;password=*';
+            $dsn = 'pgsql:host=localhost;port=5432;dbname=addsecure;user=postgres_user;password=password';
             $this->pdo = new PDO($dsn);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }

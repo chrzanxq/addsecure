@@ -4,7 +4,6 @@ namespace Domain\Service;
 
 use Domain\Repository\VehicleRepositoryInterface;
 use Domain\Entity\Vehicle;
-use Domain\ValueObject\VehicleId;
 use Domain\ValueObject\VehicleType;
 
 class VehiclesWriter
@@ -13,24 +12,25 @@ class VehiclesWriter
     {
     }
 
-    public function saveVehicle(VehicleDTO $vehicleDTO)
+    public function saveVehicle(VehicleDTO $vehicleDTO): void
     {
         $id = $vehicleDTO->id ?? null;
 
         $vehicle = new Vehicle(
-            new VehicleId($id),
+            $id ?? $id ?: null,
             $vehicleDTO->registrationNumber,
             $vehicleDTO->brand,
             $vehicleDTO->model,
             new VehicleType($vehicleDTO->type),
             $vehicleDTO->createdAt ?? new \DateTimeImmutable(),
-            new \DateTimeImmutable() // Always update on save
+            new \DateTimeImmutable()
         );
 
         $this->vehicleRepository->persist($vehicle);
     }
 
-    public function deleteById($id)
+
+    public function deleteById($id): void
     {
         $this->vehicleRepository->deleteById($id);
     }

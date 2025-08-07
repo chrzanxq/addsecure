@@ -2,12 +2,11 @@
 
 namespace Domain\Entity;
 
-use Domain\ValueObject\VehicleId;
 use Domain\ValueObject\VehicleType;
 
 class Vehicle
 {
-    private VehicleId $id;
+    private ?string $id;
     private string $registrationNumber;
     private string $brand;
     private string $model;
@@ -16,7 +15,7 @@ class Vehicle
     private \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        VehicleId $id,
+        ?string $id,
         string $registrationNumber,
         string $brand,
         string $model,
@@ -33,10 +32,16 @@ class Vehicle
         $this->updatedAt = $updatedAt;
     }
 
-    public function getId(): VehicleId
+    public function getId(): ?string
     {
-        return $this->id;
+        return $this->id ? $this->id : null;
     }
+
+    public function setId(string $id): void
+    {
+        $this->id = $id;
+    }
+
 
     public function getRegistrationNumber(): string
     {
