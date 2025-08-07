@@ -75,8 +75,8 @@ class VehicleController extends BaseController
             }
 
             $this->writer->deleteById($id);
-            //zwykle 200
-            return $this->toJsonResponse(['status' => 'deleted', 'id' => $id]);
+
+            return $this->toJsonResponse([]);
         } catch (\Throwable $e) {
             return $this->handleException($e);
         }
