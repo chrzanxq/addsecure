@@ -11,6 +11,13 @@
               class="elevation-1"
               :loading="loading"
               :item-class="getRowClass"
+              :footer-props="{
+                itemsPerPageOptions: [5, 10, 20, 50],
+                showFirstLastPage: true,
+                firstIcon: 'mdi-page-first',
+                lastIcon: 'mdi-page-last'
+              }"
+              :custom-sort="sortFn"
               @click:row="handleRowClick"
             >
 
@@ -165,7 +172,31 @@ const getRowClass = (item: Vehicle) => {
 }
 
 
+function sortFn(items: any[], sortBy: string[], sortDesc: boolean[]) {
+  return items.sort((a, b) => {
+    const key = sortBy[0]
+    const desc = sortDesc[0]
 
+    const getComparableValue = (item: any) => {
+      const value = item[key]
+
+      // Check if it's a date object
+      if (value && value.date && typeof value.date === 'string') {
+        return new Date(value.date).getTime()
+      }
+
+      // Fallback for string/number
+      return typeof value === 'string' || typeof value === 'number' ? value : ''
+    }
+
+    const aVal = getComparableValue(a)
+    const bVal = getComparableValue(b)
+
+    if (aVal < bVal) return desc ? 1 : -1
+    if (aVal > bVal) return desc ? -1 : 1
+    return 0
+  })
+}
 
 
 // Fetch data
