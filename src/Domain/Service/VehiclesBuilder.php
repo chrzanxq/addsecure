@@ -21,11 +21,11 @@ class VehiclesBuilder
     private function entityToDTO(Vehicle $vehicle)
     {
         $vehicleDTO = new VehicleDTO();
-        $vehicleDTO->id = $vehicle->getId();
+        $vehicleDTO->id = $vehicle->getId()->getValue();
         $vehicleDTO->registrationNumber = $vehicle->getRegistrationNumber(); 
         $vehicleDTO->brand = $vehicle->getBrand();
         $vehicleDTO->model = $vehicle->getModel();
-        $vehicleDTO->type = $vehicle->getType();
+        $vehicleDTO->type =  $vehicle->getType()->getValue();
         $vehicleDTO->createdAt = $vehicle->getCreatedAt();
         $vehicleDTO->updatedAt = $vehicle->getUpdatedAt();
 
