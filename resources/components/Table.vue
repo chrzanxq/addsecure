@@ -1,32 +1,34 @@
 <template>
   <v-container>
     <v-card style="width: 100%;">
-      <!-- <v-card-title>Lista pojazdów</v-card-title> -->
+            <v-data-table
+              v-model="selected"
+              :headers="headers"
+              :items="vehicles"
+              :items-per-page="5"
+              :search="search"
+              item-value="id"
+              class="elevation-1"
+              :loading="loading"
+              :item-class="getRowClass"
+              @click:row="handleRowClick"
+            >
 
-        <v-data-table
-        v-model="selected"
-        :headers="headers"
-        :items="vehicles"
-        :items-per-page="5"
-        :search="search"
-        item-value="id"
-        show-select
-        class="elevation-1"
-        :loading="loading"
-        >
             <template v-slot:top>
                 <div class="d-flex align-center px-4 py-2">
-                    <v-btn color="green" @click="openAddDialog" class="mr-2">
-                    <v-icon left>mdi-plus</v-icon> Add
+                    <v-btn icon color="green" @click="openAddDialog" class="mr-2">
+                    <v-icon>mdi-plus</v-icon> 
                     </v-btn>
 
-                    <v-btn
+                  <v-btn
+                    v-if="bulkMode"
                     color="red"
                     @click="deleteSelected"
                     :disabled="!selected.length"
-                    >
+                  >
                     <v-icon left>mdi-delete</v-icon> Delete Selected
-                    </v-btn>
+                  </v-btn>
+
 
                     <v-spacer />
                     <v-text-field
@@ -80,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, nextTick } from 'vue'
 import BodyCellDateTime from './BodyCellDateTime.vue'
 import { useToast } from '../composables/useToast'
 import $api from '../helpers/ApiRest'
@@ -101,13 +103,15 @@ interface Vehicle {
 const apiBaseUrl = ref('')
 
 const vehicles = ref<Vehicle[]>([])
-const selected = ref<Vehicle[]>([])
+const selected = ref<string[]>([])
+const isCtrlDown = ref(false)
 const search = ref('')
 const fetchLoading = ref(false)
 const loading = computed(() => fetchLoading.value)
 
 const dialog = ref(false)
 const isEditing = ref(false)
+const bulkMode = ref(false)
 const editingId = ref<string | null>(null)
 
 const form = ref({
@@ -116,6 +120,9 @@ const form = ref({
   model: '',
   type: '',
 })
+
+
+
 
 const headers = [
   { text: 'ID', value: 'id' },
@@ -127,6 +134,39 @@ const headers = [
   { text: 'Zaktualizowano', value: 'updatedAt' },
   { text: 'Akcje', value: 'actions', sortable: false },
 ]
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey || e.metaKey) isCtrlDown.value = true
+}
+
+const handleKeyUp = (e: KeyboardEvent) => {
+  isCtrlDown.value = false
+}
+
+const handleRowClick = (props: any) => {
+  if (!isCtrlDown.value) return
+  console.log(props)
+  const id = props?.id
+  const index = selected.value.indexOf(id)
+  console.log(index)
+  if (index === -1) {
+    selected.value.push(id)
+  } else {
+    selected.value.splice(index, 1)
+  }
+
+  nextTick(() => {
+    bulkMode.value = selected.value.length > 0
+  })
+}
+
+const getRowClass = (item: Vehicle) => {
+  return selected.value.includes(item.id) ? 'selected-row' : ''
+}
+
+
+
+
 
 // Fetch data
 const fetchData = () => {
@@ -159,7 +199,7 @@ const deleteVehicle = (id: string) => {
 
 // Bulk delete
 const deleteSelected = () => {
-  const ids = selected.value.map((v) => v.id)
+  const ids = selected.value
   Promise.all(
     ids.map((id) => $api.delete(`/vehicles/delete/${id}`))
   )
@@ -202,7 +242,7 @@ const editVehicle = (id: string) => {
   dialog.value = true
 }
 
-// Save (create or update)
+// Save (create or update) (id = 0 is an ugly workaround for having single POST endpoint)
 const saveVehicle = () => {
   const url = isEditing.value && editingId.value
     ? `/vehicles/save/${editingId.value}`
@@ -222,6 +262,19 @@ const saveVehicle = () => {
 
 onMounted(() => {
   fetchData()
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
 })
 </script>
+
+<style scoped>
+::v-deep(.selected-row) {
+  background-color: #fde3fd !important; 
+}
+</style>
 
