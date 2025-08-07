@@ -3,66 +3,90 @@
     <v-card style="width: 100%;">
       <!-- <v-card-title>Lista pojazdów</v-card-title> -->
 
-      <v-data-table
+        <v-data-table
+        v-model="selected"
         :headers="headers"
         :items="vehicles"
         :items-per-page="5"
         :search="search"
+        item-value="id"
+        show-select
         class="elevation-1"
         :loading="loading"
-      >
-        <template v-slot:top>
-            <div class="d-flex">
-
-                <div class="px-4 py-2">
-                    <v-btn icon>
-                        <v-icon color="green">
-                            mdi-plus
-                        </v-icon>
+        >
+            <template v-slot:top>
+                <div class="d-flex align-center px-4 py-2">
+                    <v-btn color="green" @click="openAddDialog" class="mr-2">
+                    <v-icon left>mdi-plus</v-icon> Add
                     </v-btn>
-            </div>
-            <v-spacer />
-            <div class="px-4 py-2">
-                <v-text-field
-                v-model="search"
-                label="Szukaj"
-                dense
-                hide-details
-                clearable
-                style="max-width: 200px;"
-                />
-            </div>
-            </div>
-        </template>
 
-        <template v-slot:item.createdAt="{ item }">
-            <BodyCellDateTime :value="item.createdAt" />
-        </template>
+                    <v-btn
+                    color="red"
+                    @click="deleteSelected"
+                    :disabled="!selected.length"
+                    >
+                    <v-icon left>mdi-delete</v-icon> Delete Selected
+                    </v-btn>
 
-        <template v-slot:item.updatedAt="{ item }">
-            <BodyCellDateTime :value="item.updatedAt" />
-        </template>
+                    <v-spacer />
+                    <v-text-field
+                    v-model="search"
+                    label="Search"
+                    dense
+                    hide-details
+                    clearable
+                    style="max-width: 200px;"
+                    />
+                </div>
+            </template>
 
-        <template v-slot:item.actions="{ item }">
-            <v-btn icon @click="editVehicle(item.id)">
-                <v-icon color="primary">mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon @click="deleteVehicle(item.id)">
-                <v-icon color="red">mdi-delete</v-icon>
-            </v-btn>
-        </template>
-      </v-data-table>
-      <v-btn @click="notify">Show Toast</v-btn>
+            <template v-slot:item.createdAt="{ item }">
+                <BodyCellDateTime :value="item.createdAt" />
+            </template>
+
+            <template v-slot:item.updatedAt="{ item }">
+                <BodyCellDateTime :value="item.updatedAt" />
+            </template>
+
+            <template v-slot:item.actions="{ item }">
+                <v-btn icon @click="editVehicle(item.id)">
+                    <v-icon color="primary">mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon @click="deleteVehicle(item.id)">
+                    <v-icon color="red">mdi-delete</v-icon>
+                </v-btn>
+            </template>
+        </v-data-table>
     </v-card>
+
+    <v-dialog v-model="dialog" max-width="500px">
+        <v-card>
+            <v-card-title>{{ isEditing ? 'Edit Vehicle' : 'Add Vehicle' }}</v-card-title>
+            <v-card-text>
+            <v-text-field v-model="form.registrationNumber" label="Registration" />
+            <v-text-field v-model="form.brand" label="Brand" />
+            <v-text-field v-model="form.model" label="Model" />
+            <v-text-field v-model="form.type" label="Type" />
+            </v-card-text>
+            <v-card-actions>
+            <v-spacer />
+            <v-btn text @click="dialog = false">Cancel</v-btn>
+            <v-btn color="primary" @click="saveVehicle">Save</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
 import BodyCellDateTime from './BodyCellDateTime.vue'
 import { useToast } from '../composables/useToast'
+import $api from '../helpers/ApiRest'
+
 const $toast = useToast()
+
 interface Vehicle {
   id: string
   registrationNumber: string
@@ -73,12 +97,26 @@ interface Vehicle {
   updatedAt: string
 }
 
+//should be env
+const apiBaseUrl = ref('')
+
 const vehicles = ref<Vehicle[]>([])
+const selected = ref<Vehicle[]>([])
 const search = ref('')
 const fetchLoading = ref(false)
-const loading = computed(() => {
-    return fetchLoading.value
+const loading = computed(() => fetchLoading.value)
+
+const dialog = ref(false)
+const isEditing = ref(false)
+const editingId = ref<string | null>(null)
+
+const form = ref({
+  registrationNumber: '',
+  brand: '',
+  model: '',
+  type: '',
 })
+
 const headers = [
   { text: 'ID', value: 'id' },
   { text: 'Rejestracja', value: 'registrationNumber' },
@@ -87,35 +125,103 @@ const headers = [
   { text: 'Typ', value: 'type' },
   { text: 'Utworzono', value: 'createdAt' },
   { text: 'Zaktualizowano', value: 'updatedAt' },
-  { text: 'Akcje', value: 'actions', sortable: false}
+  { text: 'Akcje', value: 'actions', sortable: false },
 ]
-const notify = () => {
-      $toast.info('Hello from toast!')
-    }
+
+// Fetch data
 const fetchData = () => {
-    fetchLoading.value = true
-    axios.get<{ results: Vehicle[] }>('http://localhost:8008/vehicles').then((response) => {
-        vehicles.value = response.data.results
-        fetchLoading.value = false
-    }).catch((error) => {
-        fetchLoading.value = false
-        console.log(error)
+  fetchLoading.value = true
+  $api
+    .get('/vehicles')
+    .then((response) => {
+      vehicles.value = response.data.results
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    .finally(() => {
+      fetchLoading.value = false
     })
 }
 
+// Delete single
 const deleteVehicle = (id: string) => {
-    axios.delete('http://localhost:8008/vehicles/delete/1').then((response) => {
-        console.log(response, 'a')
-    }).catch((error) => {
-        console.log(error)
+  $api
+    .delete(`/vehicles/delete/${id}`)
+    .then(() => {
+      $toast.success('Deleted')
+      fetchData()
+    })
+    .catch(() => {
+      $toast.error('Error deleting')
     })
 }
 
-const editVehicle = (id: string) => {
-
+// Bulk delete
+const deleteSelected = () => {
+  const ids = selected.value.map((v) => v.id)
+  Promise.all(
+    ids.map((id) => $api.delete(`/vehicles/delete/${id}`))
+  )
+    .then(() => {
+      $toast.success(`Deleted ${ids.length} vehicle(s)`)
+      selected.value = []
+      fetchData()
+    })
+    .catch(() => {
+      $toast.error('Error deleting selected vehicles')
+    })
 }
 
-onMounted( () => {
-    fetchData()
+// Open add dialog
+const openAddDialog = () => {
+  isEditing.value = false
+  editingId.value = null
+  form.value = {
+    registrationNumber: '',
+    brand: '',
+    model: '',
+    type: '',
+  }
+  dialog.value = true
+}
+
+// Open edit dialog
+const editVehicle = (id: string) => {
+  const vehicle = vehicles.value.find((v) => v.id === id)
+  if (!vehicle) return
+
+  isEditing.value = true
+  editingId.value = id
+  form.value = {
+    registrationNumber: vehicle.registrationNumber,
+    brand: vehicle.brand,
+    model: vehicle.model,
+    type: vehicle.type,
+  }
+  dialog.value = true
+}
+
+// Save (create or update)
+const saveVehicle = () => {
+  const url = isEditing.value && editingId.value
+    ? `/vehicles/save/${editingId.value}`
+    : '/vehicles/save/0'
+
+  $api
+    .post(url, form.value)
+    .then(() => {
+      $toast.success(isEditing.value ? 'Vehicle updated' : 'Vehicle added')
+      dialog.value = false
+      fetchData()
+    })
+    .catch(() => {
+      $toast.error('Error saving vehicle')
+    })
+}
+
+onMounted(() => {
+  fetchData()
 })
 </script>
+

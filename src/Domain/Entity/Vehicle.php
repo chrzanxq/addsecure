@@ -7,7 +7,7 @@ use Domain\ValueObject\VehicleType;
 
 class Vehicle
 {
-    private VehicleId $id;
+    private ?VehicleId $id;
     private string $registrationNumber;
     private string $brand;
     private string $model;
@@ -16,7 +16,8 @@ class Vehicle
     private \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        VehicleId $id,
+        //risky workaround
+        ?VehicleId $id,
         string $registrationNumber,
         string $brand,
         string $model,
@@ -33,10 +34,16 @@ class Vehicle
         $this->updatedAt = $updatedAt;
     }
 
-    public function getId(): VehicleId
+    public function getId(): ?VehicleId
     {
-        return $this->id;
+        return $this->id ? $this->id : null;
     }
+
+    public function setId(int $id): void
+    {
+        $this->id = new VehicleId($id);
+    }
+
 
     public function getRegistrationNumber(): string
     {

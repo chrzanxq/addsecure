@@ -45,20 +45,29 @@ class VehicleController extends BaseController
             $data = json_decode($request->getContent(), true);
 
             $dto = new VehicleDTO();
-            $dto->id = $id;
+            $dto->id = $id > 0 ? $id : null;
             $dto->registrationNumber = strtoupper($data['registrationNumber'] ?? '');
             $dto->brand = $data['brand'] ?? '';
             $dto->model = $data['model'] ?? '';
             $dto->type = $data['type'] ?? '';
 
             $dto->validate();
-            $this->writer->saveVehicle($dto);
 
-            return $this->toJsonResponse(['status' => 'saved', 'id' => $id]);
+            // saveVehicle will create or update based on whether $dto->id is null or not
+            $resultingId = $this->writer->saveVehicle($dto);
+
+            return $this->toJsonResponse([
+                'status' => $id > 0 ? 'updated' : 'created',
+                'id' => $resultingId
+            ]);
+
         } catch (\Throwable $e) {
             return $this->handleException($e);
         }
     }
+
+
+
 
     public function delete(int $id): JsonResponse
     {

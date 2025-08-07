@@ -13,22 +13,23 @@ class VehiclesWriter
     {
     }
 
-    public function saveVehicle(VehicleDTO $vehicleDTO)
+    public function saveVehicle(VehicleDTO $vehicleDTO): int
     {
         $id = $vehicleDTO->id ?? null;
 
         $vehicle = new Vehicle(
-            new VehicleId($id),
+            $id !== null ? new VehicleId($id) : null,
             $vehicleDTO->registrationNumber,
             $vehicleDTO->brand,
             $vehicleDTO->model,
             new VehicleType($vehicleDTO->type),
             $vehicleDTO->createdAt ?? new \DateTimeImmutable(),
-            new \DateTimeImmutable() // Always update on save
+            new \DateTimeImmutable()
         );
 
-        $this->vehicleRepository->persist($vehicle);
+        return $this->vehicleRepository->persist($vehicle);
     }
+
 
     public function deleteById($id)
     {

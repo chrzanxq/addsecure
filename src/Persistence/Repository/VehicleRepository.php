@@ -44,9 +44,11 @@ class VehicleRepository implements VehicleRepositoryInterface
         $stmt->execute(['id' => $id]);
     }
 
-    public function persist(Vehicle $vehicle): void
+    public function persist(Vehicle $vehicle): int
     {
-        $exists = $this->getById($vehicle->getId()->getValue()) !== null;
+        $id = $vehicle->getId() !== null ? $vehicle->getId()->getValue() : null;
+
+        $exists = $id !== null && $this->getById($id) !== null;
 
         if ($exists) {
             $sql = 'UPDATE vehicles SET 
@@ -56,24 +58,38 @@ class VehicleRepository implements VehicleRepositoryInterface
                         type = :type,
                         updated_at = :updated_at
                     WHERE id = :id';
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                'id' => $id,
+                'registration_number' => $vehicle->getRegistrationNumber(),
+                'brand' => $vehicle->getBrand(),
+                'model' => $vehicle->getModel(),
+                'type' => $vehicle->getType()->getValue(),
+                'updated_at' => $vehicle->getUpdatedAt()->format('Y-m-d H:i:s'),
+            ]);
+
+            return $id;
         } else {
             $sql = 'INSERT INTO vehicles 
-                        (id, registration_number, brand, model, type, created_at, updated_at) 
+                        (registration_number, brand, model, type, created_at, updated_at) 
                     VALUES 
-                        (:id, :registration_number, :brand, :model, :type, :created_at, :updated_at)';
-        }
+                        (:registration_number, :brand, :model, :type, :created_at, :updated_at)';
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            'id' => $vehicle->getId()->getValue(),
-            'registration_number' => $vehicle->getRegistrationNumber(),
-            'brand' => $vehicle->getBrand(),
-            'model' => $vehicle->getModel(),
-            'type' => $vehicle->getType()->getValue(),
-            'created_at' => $vehicle->getCreatedAt()->format('Y-m-d H:i:s'),
-            'updated_at' => $vehicle->getUpdatedAt()->format('Y-m-d H:i:s'),
-        ]);
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                'registration_number' => $vehicle->getRegistrationNumber(),
+                'brand' => $vehicle->getBrand(),
+                'model' => $vehicle->getModel(),
+                'type' => $vehicle->getType()->getValue(),
+                'created_at' => $vehicle->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updated_at' => $vehicle->getUpdatedAt()->format('Y-m-d H:i:s'),
+            ]);
+
+            return (int) $this->pdo->lastInsertId();
+        }
     }
+
 
     private function mapRowToVehicle(array $row): Vehicle
     {

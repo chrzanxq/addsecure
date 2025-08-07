@@ -1,26 +1,23 @@
-<?php
+<?php 
+
 
 namespace Domain\ValueObject;
-
-use Ramsey\Uuid\Uuid;
-
 class VehicleId
 {
-    private string $uuid;
+    private ?int $id;
 
-    public function __construct(?string $uuid = null)
+    public function __construct(?int $id = null)
     {
-        $this->uuid = $uuid ?? Uuid::uuid4()->toString();
+        $this->id = $id;
     }
 
-    public function getValue(): string
+    public function getValue(): ?int
     {
-        return $this->uuid;
+        return $this->id;
     }
 
-        public function __toString(): string
+    public function __toString(): string
     {
-        return $this->uuid; 
+        return (string) $this->id;
     }
-
 }
