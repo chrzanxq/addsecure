@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch --base /public",
-    "build": "vite build --base /public"
+    "dev": "vite build --watch --base /assets",
+    "build": "vite build --base /assets"
   },
   "dependencies": {
     "@mdi/font": "^7.2.96",
