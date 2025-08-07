@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-card style="width: 100%;">
-      <v-card-title>Lista pojazdów</v-card-title>
+      <!-- <v-card-title>Lista pojazdów</v-card-title> -->
 
       <v-data-table
         :headers="headers"
@@ -12,16 +12,27 @@
         :loading="loading"
       >
         <template v-slot:top>
-          <div class="d-flex justify-end px-4 py-2">
-            <v-text-field
-              v-model="search"
-              label="Szukaj"
-              dense
-              hide-details
-              clearable
-              style="max-width: 200px;"
-            ></v-text-field>
-          </div>
+            <div class="d-flex">
+
+                <div class="px-4 py-2">
+                    <v-btn icon>
+                        <v-icon color="green">
+                            mdi-plus
+                        </v-icon>
+                    </v-btn>
+            </div>
+            <v-spacer />
+            <div class="px-4 py-2">
+                <v-text-field
+                v-model="search"
+                label="Szukaj"
+                dense
+                hide-details
+                clearable
+                style="max-width: 200px;"
+                />
+            </div>
+            </div>
         </template>
 
         <template v-slot:item.createdAt="{ item }">
@@ -41,6 +52,7 @@
             </v-btn>
         </template>
       </v-data-table>
+      <v-btn @click="notify">Show Toast</v-btn>
     </v-card>
   </v-container>
 </template>
@@ -49,9 +61,10 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import BodyCellDateTime from './BodyCellDateTime.vue'
-
+import { useToast } from '../composables/useToast'
+const $toast = useToast()
 interface Vehicle {
-  id: number
+  id: string
   registrationNumber: string
   brand: string
   model: string
@@ -76,6 +89,9 @@ const headers = [
   { text: 'Zaktualizowano', value: 'updatedAt' },
   { text: 'Akcje', value: 'actions', sortable: false}
 ]
+const notify = () => {
+      $toast.info('Hello from toast!')
+    }
 const fetchData = () => {
     fetchLoading.value = true
     axios.get<{ results: Vehicle[] }>('http://localhost:8008/vehicles').then((response) => {
