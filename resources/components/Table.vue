@@ -17,6 +17,9 @@
           {{ formatDate(item.updatedAt) }}
         </template>
       </v-data-table>
+      <v-btn @click="deleteVehicle">
+        chuj
+      </v-btn>
     </v-card>
   </v-container>
 </template>
@@ -56,6 +59,14 @@ const fetchData = async () => {
 
 const formatDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleString()
+}
+
+const deleteVehicle = () => {
+    axios.delete('http://localhost:8008/vehicles/delete/1').then((response) => {
+        console.log(response, 'a')
+    }).catch((error) => {
+        console.log(error)
+    })
 }
 
 onMounted( () => {
