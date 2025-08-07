@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Container\Container;
+use App\Validator\SaveVehicleValidator;
 use Domain\Service\VehiclesBuilder;
 use Domain\Service\VehiclesReader;
 use Domain\Service\VehiclesWriter;
@@ -39,27 +40,23 @@ class VehicleController extends BaseController
     }
 
 
-    public function save(int $id, Request $request): JsonResponse
+    public function save(?string $id, Request $request): JsonResponse
     {
         try {
-            $data = json_decode($request->getContent(), true);
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+            $validated = (new SaveVehicleValidator())->validate($data);
 
             $dto = new VehicleDTO();
-            $dto->id = $id > 0 ? $id : null;
-            $dto->registrationNumber = strtoupper($data['registrationNumber'] ?? '');
-            $dto->brand = $data['brand'] ?? '';
-            $dto->model = $data['model'] ?? '';
-            $dto->type = $data['type'] ?? '';
+            $dto->id =  $id;
+            $dto->registrationNumber = $validated['registrationNumber'];
+            $dto->brand = $validated['brand'];
+            $dto->model = $validated['model'];
+            $dto->type = $validated['type'];
 
-            $dto->validate();
+            $this->writer->saveVehicle($dto);
 
-            // saveVehicle will create or update based on whether $dto->id is null or not
-            $resultingId = $this->writer->saveVehicle($dto);
-
-            return $this->toJsonResponse([
-                'status' => $id > 0 ? 'updated' : 'created',
-                'id' => $resultingId
-            ]);
+            return $this->toJsonResponse([]);
 
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -69,7 +66,7 @@ class VehicleController extends BaseController
 
 
 
-    public function delete(int $id): JsonResponse
+    public function delete(string $id): JsonResponse
     {
         try {
             $vehicle = $this->reader->getVehicleById($id);
@@ -78,6 +75,7 @@ class VehicleController extends BaseController
             }
 
             $this->writer->deleteById($id);
+            //zwykle 200
             return $this->toJsonResponse(['status' => 'deleted', 'id' => $id]);
         } catch (\Throwable $e) {
             return $this->handleException($e);

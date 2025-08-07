@@ -15,6 +15,7 @@ const props = defineProps<{
   value: DateTimeObject
 }>()
 
+//very basic date formatting, this should take user's locale / preference into account
 const formatted = computed(() => {
   if (!props.value || typeof props.value.date !== 'string') return '—'
 

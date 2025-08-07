@@ -1,5 +1,6 @@
 <template>
   <VApp>
+      <!-- see useToast.ts -->
       <notifications
         group="app"
         position="bottom center"

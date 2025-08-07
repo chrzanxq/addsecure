@@ -12,5 +12,5 @@ interface VehicleRepositoryInterface
 
     public function deleteById($id);
 
-    public function persist(Vehicle $vehicle): int;
+    public function persist(Vehicle $vehicle): void;
 }

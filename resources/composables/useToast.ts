@@ -1,9 +1,11 @@
+// i have installed the 'vue-notify' library but this should probably be a custom global using v-snackbar or v-alert
 import { getCurrentInstance } from 'vue'
 
 export function useToast() {
   const instance = getCurrentInstance()
-  if (!instance) throw new Error('useToast must be used inside setup()')
-
+  if (!instance) {
+    throw new Error('useToast must be used inside setup()')
+  } 
   const notify = instance.proxy.$notify
 
   return {

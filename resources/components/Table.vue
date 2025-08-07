@@ -1,70 +1,74 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <v-card style="width: 100%;">
-            <v-data-table
-              v-model="selected"
-              :headers="headers"
-              :items="vehicles"
-              :items-per-page="5"
-              :search="search"
-              item-value="id"
-              class="elevation-1"
-              :loading="loading"
-              :item-class="getRowClass"
-              :footer-props="{
-                itemsPerPageOptions: [5, 10, 20, 50],
-                showFirstLastPage: true,
-                firstIcon: 'mdi-page-first',
-                lastIcon: 'mdi-page-last'
-              }"
-              :custom-sort="sortFn"
-              @click:row="handleRowClick"
-            >
+        <v-data-table
+          v-model="selected"
+          :headers="headers"
+          :items="vehicles"
+          :search="search"
+          item-value="id"
+          class="elevation-1"
+          :options.sync="options"
+          :loading="loading"
+          :item-class="getRowClass"
+          :footer-props="{
+            itemsPerPageOptions: [5, 10, 20, 50],
+            showFirstLastPage: true,
+            firstIcon: 'mdi-page-first',
+            lastIcon: 'mdi-page-last'
+          }"
+          :custom-sort="sortFn"
+          @click:row="handleRowClick"
+        >
 
-            <template v-slot:top>
-                <div class="d-flex align-center px-4 py-2">
-                    <v-btn icon color="green" @click="openAddDialog" class="mr-2">
-                    <v-icon>mdi-plus</v-icon> 
-                    </v-btn>
-
-                  <v-btn
-                    v-if="bulkMode"
-                    color="red"
-                    @click="deleteSelected"
-                    :disabled="!selected.length"
-                  >
-                    <v-icon left>mdi-delete</v-icon> Delete Selected
+          <template v-slot:top>
+              <div class="d-flex align-center px-4 py-2">
+                  <v-btn icon color="green" @click="openAddDialog" class="mr-2">
+                  <v-icon>mdi-plus</v-icon> 
                   </v-btn>
-
-
-                    <v-spacer />
-                    <v-text-field
-                    v-model="search"
-                    label="Search"
-                    dense
-                    hide-details
-                    clearable
-                    style="max-width: 200px;"
-                    />
-                </div>
-            </template>
-
-            <template v-slot:item.createdAt="{ item }">
-                <BodyCellDateTime :value="item.createdAt" />
-            </template>
-
-            <template v-slot:item.updatedAt="{ item }">
-                <BodyCellDateTime :value="item.updatedAt" />
-            </template>
-
-            <template v-slot:item.actions="{ item }">
-                <v-btn icon @click="editVehicle(item.id)">
-                    <v-icon color="primary">mdi-pencil</v-icon>
+                <!-- below is optional made as bonus -->
+                <v-btn
+                  v-if="bulkMode"
+                  color="red"
+                  @click="deleteSelected"
+                  :disabled="!selected.length"
+                >
+                  <v-icon left>mdi-delete</v-icon> Delete Selected
                 </v-btn>
-                <v-btn icon @click="deleteVehicle(item.id)">
-                    <v-icon color="red">mdi-delete</v-icon>
-                </v-btn>
-            </template>
+                  <v-spacer />
+                  <v-text-field
+                  v-model="search"
+                  :label="$t('Search')"
+                  dense
+                  hide-details
+                  clearable
+                  style="max-width: 200px;"
+                  />
+              </div>
+          </template>
+          <template v-slot:item.lp="{ index }">
+            <!-- persistent across pages, dont know if desired -->
+            {{ getLpNumber(index) }}
+          </template>
+          <template v-slot:item.type="{ item }">
+            <span class="text-capitalize">{{ $t(item.type) }}</span>
+          </template>
+          <template v-slot:item.createdAt="{ item }">
+              <BodyCellDateTime :value="item.createdAt" />
+          </template>
+
+          <template v-slot:item.updatedAt="{ item }">
+              <BodyCellDateTime :value="item.updatedAt" />
+          </template>
+
+          <template v-slot:item.actions="{ item }">
+              <v-btn icon @click="editVehicle(item.id)">
+                  <v-icon color="primary">mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn icon @click="deleteVehicle(item.id)">
+                  <v-icon color="red">mdi-delete</v-icon>
+              </v-btn>
+          </template>
         </v-data-table>
     </v-card>
 
@@ -92,10 +96,11 @@
 import { ref, onMounted, computed, onBeforeUnmount, nextTick } from 'vue'
 import BodyCellDateTime from './BodyCellDateTime.vue'
 import { useToast } from '../composables/useToast'
+import { useTranslate } from '../composables/useTranslate'
 import $api from '../helpers/ApiRest'
 
 const $toast = useToast()
-
+const { $t } = useTranslate()
 interface Vehicle {
   id: string
   registrationNumber: string
@@ -120,6 +125,17 @@ const dialog = ref(false)
 const isEditing = ref(false)
 const bulkMode = ref(false)
 const editingId = ref<string | null>(null)
+const options = ref({
+  page: 1,
+  itemsPerPage: 5,
+  sortBy: [],
+  sortDesc: [],
+  groupBy: [],
+  groupDesc: [],
+  multiSort: false,
+  mustSort: false,
+})
+
 
 const form = ref({
   registrationNumber: '',
@@ -128,34 +144,37 @@ const form = ref({
   type: '',
 })
 
+const headers = computed(() => [
+  { text: $t('No.'), value: 'lp' },
+  { text: $t('Registration'), value: 'registrationNumber' },
+  { text: $t('Make'), value: 'brand' },
+  { text: $t('Model'), value: 'model' },
+  { text: $t('Type'), value: 'type' },
+  { text: $t('Created'), value: 'createdAt' },
+  { text: $t('Updated'), value: 'updatedAt' },
+  { text: $t('Actions'), value: 'actions', sortable: false },
+])
 
-
-
-const headers = [
-  { text: 'ID', value: 'id' },
-  { text: 'Rejestracja', value: 'registrationNumber' },
-  { text: 'Marka', value: 'brand' },
-  { text: 'Model', value: 'model' },
-  { text: 'Typ', value: 'type' },
-  { text: 'Utworzono', value: 'createdAt' },
-  { text: 'Zaktualizowano', value: 'updatedAt' },
-  { text: 'Akcje', value: 'actions', sortable: false },
-]
+const getLpNumber = (index: number) => {
+  return (options.value.page - 1) * options.value.itemsPerPage + index + 1
+}
 
 const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.ctrlKey || e.metaKey) isCtrlDown.value = true
+  if (e.ctrlKey || e.metaKey) {
+    isCtrlDown.value = true
+  }
 }
 
 const handleKeyUp = (e: KeyboardEvent) => {
   isCtrlDown.value = false
 }
-
+// BONUS for multi select
 const handleRowClick = (props: any) => {
-  if (!isCtrlDown.value) return
-  console.log(props)
+  if (!isCtrlDown.value) {
+    return
+  }
   const id = props?.id
   const index = selected.value.indexOf(id)
-  console.log(index)
   if (index === -1) {
     selected.value.push(id)
   } else {
@@ -166,12 +185,12 @@ const handleRowClick = (props: any) => {
     bulkMode.value = selected.value.length > 0
   })
 }
-
+// BONUS for multi select
 const getRowClass = (item: Vehicle) => {
   return selected.value.includes(item.id) ? 'selected-row' : ''
 }
 
-
+// custom sort function to handle dates
 function sortFn(items: any[], sortBy: string[], sortDesc: boolean[]) {
   return items.sort((a, b) => {
     const key = sortBy[0]
@@ -203,12 +222,12 @@ function sortFn(items: any[], sortBy: string[], sortDesc: boolean[]) {
 const fetchData = () => {
   fetchLoading.value = true
   $api
-    .get('/vehicles')
+    .get('/vehicles/list')
     .then((response) => {
       vehicles.value = response.data.results
     })
     .catch((error) => {
-      console.error(error)
+      $toast.error('Failed to fetch vehicles list')
     })
     .finally(() => {
       fetchLoading.value = false
@@ -221,6 +240,7 @@ const deleteVehicle = (id: string) => {
     .delete(`/vehicles/delete/${id}`)
     .then(() => {
       $toast.success('Deleted')
+      //low number of records so re-fetch but ideally should be server-side pagination or careful frontend records handlers, maybe store
       fetchData()
     })
     .catch(() => {
@@ -228,7 +248,7 @@ const deleteVehicle = (id: string) => {
     })
 }
 
-// Bulk delete
+// BONUS Bulk delete
 const deleteSelected = () => {
   const ids = selected.value
   Promise.all(
@@ -237,6 +257,7 @@ const deleteSelected = () => {
     .then(() => {
       $toast.success(`Deleted ${ids.length} vehicle(s)`)
       selected.value = []
+      //low number of records so re-fetch but ideally should be server-side pagination or careful frontend records handlers, maybe store
       fetchData()
     })
     .catch(() => {
@@ -244,7 +265,6 @@ const deleteSelected = () => {
     })
 }
 
-// Open add dialog
 const openAddDialog = () => {
   isEditing.value = false
   editingId.value = null
@@ -257,7 +277,6 @@ const openAddDialog = () => {
   dialog.value = true
 }
 
-// Open edit dialog
 const editVehicle = (id: string) => {
   const vehicle = vehicles.value.find((v) => v.id === id)
   if (!vehicle) return
@@ -273,24 +292,25 @@ const editVehicle = (id: string) => {
   dialog.value = true
 }
 
-// Save (create or update) (id = 0 is an ugly workaround for having single POST endpoint)
+// Save (create or update) this really should be separated into POST and PUT / PATCH
 const saveVehicle = () => {
   const url = isEditing.value && editingId.value
     ? `/vehicles/save/${editingId.value}`
-    : '/vehicles/save/0'
+    : '/vehicles/save/'
 
   $api
     .post(url, form.value)
     .then(() => {
       $toast.success(isEditing.value ? 'Vehicle updated' : 'Vehicle added')
       dialog.value = false
+      //low number of records so re-fetch but ideally should be server-side pagination or careful frontend records handlers, maybe store
       fetchData()
     })
     .catch(() => {
       $toast.error('Error saving vehicle')
     })
 }
-
+// BONUS for basic multi-row selection
 onMounted(() => {
   fetchData()
   window.addEventListener('keydown', handleKeyDown)

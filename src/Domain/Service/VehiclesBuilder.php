@@ -21,7 +21,7 @@ class VehiclesBuilder
     private function entityToDTO(Vehicle $vehicle)
     {
         $vehicleDTO = new VehicleDTO();
-        $vehicleDTO->id = $vehicle->getId() !== null ? $vehicle->getId()->getValue() : null;
+        $vehicleDTO->id = $vehicle->getId() !== null ? $vehicle->getId() : null;
         $vehicleDTO->registrationNumber = $vehicle->getRegistrationNumber(); 
         $vehicleDTO->brand = $vehicle->getBrand();
         $vehicleDTO->model = $vehicle->getModel();
