@@ -1,5 +1,5 @@
 /vendor
-/public/*
+/public/assets/*
 !/public/.gitkeep
 /db/*
 !/db/.gitkeep

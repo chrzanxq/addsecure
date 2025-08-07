@@ -3,7 +3,8 @@
     "require": {
         "symfony/routing": "^v6.3.3",
         "symfony/http-foundation": "^v6.3.4",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "ramsey/uuid": "^4.9"
     },
     "config": {
         "platform": {

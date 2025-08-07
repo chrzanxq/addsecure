@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["resources/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["resources/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

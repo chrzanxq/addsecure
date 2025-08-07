@@ -22,7 +22,7 @@ class VehiclesBuilder
     {
         $vehicleDTO = new VehicleDTO();
         $vehicleDTO->id = $vehicle->getId();
-        $vehicleDTO->registrationNumber = $vehicle->getId();
+        $vehicleDTO->registrationNumber = $vehicle->getRegistrationNumber(); 
         $vehicleDTO->brand = $vehicle->getBrand();
         $vehicleDTO->model = $vehicle->getModel();
         $vehicleDTO->type = $vehicle->getType();
@@ -31,4 +31,5 @@ class VehiclesBuilder
 
         return $vehicleDTO;
     }
+
 }

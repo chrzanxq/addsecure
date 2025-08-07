@@ -54,7 +54,7 @@ composer install
 touch db/assqlite.db  # create a database file
 yarn install
 yarn dev
-php -S localhost:8008  # start the server
+php -S localhost:8008 -t public # start the server
 ```
  
 ### Creating the `vehicles` table in SQLite:
